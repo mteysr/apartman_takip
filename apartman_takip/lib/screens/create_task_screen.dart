@@ -106,29 +106,44 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
           if (_assignmentType == 'manual') {
             finalAssignedUserId = _selectedUserId;
           } else if (_assignmentType == 'automatic') {
-            // Otomatik atama algoritması - şimdilik ilk üyeyi seç
-            // Gelecekte daha gelişmiş sıra sistemi eklenecek
             finalAssignedUserId = widget.apartmentGroup.memberIds.first;
           }
         }
 
+        // 1. Önce görevi oluştur
         final task = await _firestoreService.createTask(
           name: _nameController.text.trim(),
           description: _descriptionController.text.trim(),
           apartmentId: widget.apartmentGroup.id,
           priority: _selectedPriority,
-          assignedUserId: finalAssignedUserId, // Atama bilgisi eklendi
+          assignedUserId: finalAssignedUserId,
+        );
+
+        if (task == null) {
+          throw Exception('Görev oluşturulamadı');
+        }
+
+        // 2. Görev için sıra sistemi oluştur
+        final rotation = await _firestoreService.createTaskRotation(
+          taskId: task.id,
+          apartmentId: widget.apartmentGroup.id,
+          memberIds: widget.apartmentGroup.memberIds,
+          intervalDays: 7, // Haftalık
         );
 
         setState(() {
           _isLoading = false;
         });
 
-        if (task != null && mounted) {
+        if (mounted) {
           String message = '${task.name} görevi oluşturuldu!';
           if (task.assignedUserId != null) {
             final assignedUserName = _userNames[task.assignedUserId] ?? 'Kullanıcı';
             message += ' ($assignedUserName kişisine atandı)';
+          }
+          
+          if (rotation != null) {
+            message += ' Sıra sistemi başlatıldı.';
           }
           
           ScaffoldMessenger.of(context).showSnackBar(

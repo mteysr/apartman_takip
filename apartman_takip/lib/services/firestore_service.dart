@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/apartment_group.dart';
 import '../models/task.dart';
+import '../models/task_rotation.dart';
 import 'dart:math';
 
 class FirestoreService {
@@ -321,5 +322,209 @@ class FirestoreService {
     }
 
     return userNames;
+  }
+
+  // Görev için sıra sistemi oluştur
+  Future<TaskRotation?> createTaskRotation({
+    required String taskId,
+    required String apartmentId,
+    required List<String> memberIds,
+    int intervalDays = 7,
+  }) async {
+    try {
+      final docRef = _firestore.collection('task_rotations').doc();
+      
+      // Rastgele sıralama ile adil başlangıç
+      final shuffledMembers = List<String>.from(memberIds)..shuffle();
+      
+      final now = DateTime.now();
+      final nextRotation = now.add(Duration(days: intervalDays));
+
+      final rotation = TaskRotation(
+        id: docRef.id,
+        taskId: taskId,
+        apartmentId: apartmentId,
+        currentUserId: shuffledMembers.first,
+        memberOrder: shuffledMembers,
+        rotationStartDate: now,
+        nextRotationDate: nextRotation,
+        intervalDays: intervalDays,
+        status: RotationStatus.active,
+        currentPosition: 0,
+      );
+
+      await docRef.set(rotation.toMap());
+      return rotation;
+    } catch (e) {
+      print('Sıra sistemi oluşturma hatası: $e');
+      return null;
+    }
+  }
+
+  // Apartmanın aktif sıralarını getir
+  Future<List<TaskRotation>> getApartmentRotations(String apartmentId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('task_rotations')
+          .where('apartmentId', isEqualTo: apartmentId)
+          .where('status', isEqualTo: 'active')
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => TaskRotation.fromMap(doc.data()))
+          .toList();
+    } catch (e) {
+      print('Sıra listesi getirme hatası: $e');
+      return [];
+    }
+  }
+
+  // Belirli görev için sırayı getir
+  Future<TaskRotation?> getTaskRotation(String taskId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('task_rotations')
+          .where('taskId', isEqualTo: taskId)
+          .where('status', isEqualTo: 'active')
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        return TaskRotation.fromMap(querySnapshot.docs.first.data());
+      }
+      return null;
+    } catch (e) {
+      print('Görev sırası getirme hatası: $e');
+      return null;
+    }
+  }
+
+  // Görevi tamamla ve sırayı değiştir
+  Future<bool> completeTaskRotation({
+    required String rotationId,
+    required String completedByUserId,
+    String? notes,
+  }) async {
+    try {
+      final rotationDoc = await _firestore
+          .collection('task_rotations')
+          .doc(rotationId)
+          .get();
+
+      if (!rotationDoc.exists) return false;
+
+      final rotation = TaskRotation.fromMap(rotationDoc.data()!);
+      
+      // Sonraki kişiye geç
+      final nextPosition = (rotation.currentPosition + 1) % rotation.memberOrder.length;
+      final nextUserId = rotation.memberOrder[nextPosition];
+      final nextRotationDate = DateTime.now().add(Duration(days: rotation.intervalDays));
+
+      await _firestore.collection('task_rotations').doc(rotationId).update({
+        'currentUserId': nextUserId,
+        'currentPosition': nextPosition,
+        'nextRotationDate': nextRotationDate.millisecondsSinceEpoch,
+        'completedAt': DateTime.now().millisecondsSinceEpoch,
+        'completedByUserId': completedByUserId,
+        'rotationStartDate': DateTime.now().millisecondsSinceEpoch,
+        'notes': notes,
+      });
+
+      // Tamamlanma geçmişi kaydet
+      await _firestore.collection('task_completions').add({
+        'rotationId': rotationId,
+        'taskId': rotation.taskId,
+        'apartmentId': rotation.apartmentId,
+        'completedByUserId': completedByUserId,
+        'completedAt': DateTime.now().millisecondsSinceEpoch,
+        'notes': notes,
+      });
+
+      return true;
+    } catch (e) {
+      print('Görev tamamlama hatası: $e');
+      return false;
+    }
+  }
+
+  // Sırayı atla
+  Future<bool> skipTaskRotation({
+    required String rotationId,
+    required String skippedByUserId,
+    String? reason,
+  }) async {
+    try {
+      final rotationDoc = await _firestore
+          .collection('task_rotations')
+          .doc(rotationId)
+          .get();
+
+      if (!rotationDoc.exists) return false;
+
+      final rotation = TaskRotation.fromMap(rotationDoc.data()!);
+      
+      // Sonraki kişiye geç (atlama)
+      final nextPosition = (rotation.currentPosition + 1) % rotation.memberOrder.length;
+      final nextUserId = rotation.memberOrder[nextPosition];
+      final nextRotationDate = DateTime.now().add(Duration(days: rotation.intervalDays));
+
+      await _firestore.collection('task_rotations').doc(rotationId).update({
+        'currentUserId': nextUserId,
+        'currentPosition': nextPosition,
+        'nextRotationDate': nextRotationDate.millisecondsSinceEpoch,
+        'rotationStartDate': DateTime.now().millisecondsSinceEpoch,
+      });
+
+      // Atlama geçmişi kaydet
+      await _firestore.collection('task_skips').add({
+        'rotationId': rotationId,
+        'taskId': rotation.taskId,
+        'apartmentId': rotation.apartmentId,
+        'skippedByUserId': skippedByUserId,
+        'skippedAt': DateTime.now().millisecondsSinceEpoch,
+        'reason': reason,
+      });
+
+      return true;
+    } catch (e) {
+      print('Sıra atlama hatası: $e');
+      return false;
+    }
+  }
+
+  // Kullanıcının aktif görevlerini getir (ona düşen sıralar)
+  Future<List<Map<String, dynamic>>> getUserActiveRotations(String userId) async {
+    try {
+      final rotationsSnapshot = await _firestore
+          .collection('task_rotations')
+          .where('currentUserId', isEqualTo: userId)
+          .where('status', isEqualTo: 'active')
+          .get();
+
+      List<Map<String, dynamic>> userRotations = [];
+
+      for (var rotationDoc in rotationsSnapshot.docs) {
+        final rotation = TaskRotation.fromMap(rotationDoc.data());
+        
+        // Görev bilgisini al
+        final taskDoc = await _firestore
+            .collection('tasks')
+            .doc(rotation.taskId)
+            .get();
+            
+        if (taskDoc.exists) {
+          final task = Task.fromMap(taskDoc.data()!);
+          userRotations.add({
+            'rotation': rotation,
+            'task': task,
+          });
+        }
+      }
+
+      return userRotations;
+    } catch (e) {
+      print('Kullanıcı sıraları getirme hatası: $e');
+      return [];
+    }
   }
 }

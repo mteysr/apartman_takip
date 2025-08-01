@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import 'create_task_screen.dart';
 import 'edit_task_screen.dart';
+import 'rotation_screen.dart';
 
 class ApartmentDetailScreen extends StatefulWidget {
   final ApartmentGroup apartmentGroup;
@@ -106,6 +107,30 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
             _buildInviteCodeCard(),
             const SizedBox(height: 24),
             _buildMembersSection(),
+            const SizedBox(height: 24),
+            // Sıra Takip kartını görevlerden önce taşıdık
+            Card(
+              color: Colors.purple.shade50,
+              child: ListTile(
+                leading: const Icon(Icons.rotate_right, color: Colors.purple),
+                title: const Text(
+                  'Sıra Takip Sistemi',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: const Text('Kim bu hafta hangi görevi yapacak?'),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RotationScreen(
+                        apartmentGroup: widget.apartmentGroup,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
             const SizedBox(height: 24),
             _buildTasksSection(),
           ],
