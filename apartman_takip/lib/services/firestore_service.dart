@@ -168,4 +168,45 @@ class FirestoreService {
       return [];
     }
   }
+
+  // Görev güncelle
+  Future<Task?> updateTask({
+    required String taskId,
+    required String name,
+    required String description,
+    required int priority,
+  }) async {
+    try {
+      await _firestore.collection('tasks').doc(taskId).update({
+        'name': name,
+        'description': description,
+        'priority': priority,
+      });
+
+      // Güncellenmiş görevi al
+      final docSnapshot =
+          await _firestore.collection('tasks').doc(taskId).get();
+
+      if (docSnapshot.exists) {
+        return Task.fromMap(docSnapshot.data()!);
+      }
+      return null;
+    } catch (e) {
+      print('Görev güncelleme hatası: $e');
+      return null;
+    }
+  }
+
+  // Görev sil (soft delete)
+  Future<bool> deleteTask(String taskId) async {
+    try {
+      await _firestore.collection('tasks').doc(taskId).update({
+        'isActive': false,
+      });
+      return true;
+    } catch (e) {
+      print('Görev silme hatası: $e');
+      return false;
+    }
+  }
 }

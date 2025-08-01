@@ -5,6 +5,7 @@ import '../models/task.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import 'create_task_screen.dart';
+import 'edit_task_screen.dart';
 
 class ApartmentDetailScreen extends StatefulWidget {
   final ApartmentGroup apartmentGroup;
@@ -453,18 +454,19 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
             ),
             trailing: _isCreator
                 ? PopupMenuButton<String>(
-                    onSelected: (value) {
+                    onSelected: (value) async {
                       if (value == 'edit') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content:
-                                  Text('Görev düzenleme yakında eklenecek')),
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditTaskScreen(task: task),
+                          ),
                         );
+                        if (result != null) {
+                          _loadTasks();
+                        }
                       } else if (value == 'delete') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Görev silme yakında eklenecek')),
-                        );
+                        _showDeleteTaskDialog(task);
                       }
                     },
                     itemBuilder: (context) => [
@@ -482,9 +484,9 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete, size: 16),
+                            Icon(Icons.delete, size: 16, color: Colors.red),
                             SizedBox(width: 8),
-                            Text('Sil'),
+                            Text('Sil', style: TextStyle(color: Colors.red)),
                           ],
                         ),
                       ),
@@ -580,5 +582,58 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  void _showDeleteTaskDialog(Task task) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Görevi Sil'),
+          content:
+              Text('${task.name} görevini silmek istediğinizden emin misiniz?'),
+          actions: [
+            TextButton(
+              child: const Text('İptal'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Sil', style: TextStyle(color: Colors.red)),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _deleteTask(task);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteTask(Task task) async {
+    try {
+      final success = await _firestoreService.deleteTask(task.id);
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Görev silindi!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadTasks();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Silme hatası: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
