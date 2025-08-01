@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/apartment_group.dart';
+import 'apartment_detail_screen.dart';
 
 class ApartmentSelectionScreen extends StatefulWidget {
   const ApartmentSelectionScreen({Key? key}) : super(key: key);
@@ -60,8 +61,8 @@ class _ApartmentSelectionScreenState extends State<ApartmentSelectionScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _apartments.isEmpty
-          ? _buildEmptyState()
-          : _buildApartmentList(),
+              ? _buildEmptyState()
+              : _buildApartmentList(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // TODO: Davet kodu ile katılma ekranına git
@@ -158,9 +159,13 @@ class _ApartmentSelectionScreenState extends State<ApartmentSelectionScreen> {
             ),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () {
-              // TODO: Apartman detay ekranına git
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${apartment.name} seçildi')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ApartmentDetailScreen(
+                    apartmentGroup: apartment,
+                  ),
+                ),
               );
             },
           ),

@@ -18,6 +18,7 @@ class ApartmanTakipApp extends StatelessWidget {
     return MaterialApp(
       title: 'Apartman Takip',
       theme: ThemeData(primarySwatch: Colors.blue),
+      debugShowCheckedModeBanner: false,
       home: const LoginScreen(),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/apartment_group.dart';
+import '../models/task.dart';
 import 'dart:math';
 
 class FirestoreService {
@@ -119,6 +120,52 @@ class FirestoreService {
     } catch (e) {
       print('Gruba katılma hatası: $e');
       return null;
+    }
+  }
+
+  // Yeni görev oluştur
+  Future<Task?> createTask({
+    required String name,
+    required String description,
+    required String apartmentId,
+    int priority = 3,
+  }) async {
+    try {
+      final docRef = _firestore.collection('tasks').doc();
+
+      final task = Task(
+        id: docRef.id,
+        name: name,
+        description: description,
+        apartmentId: apartmentId,
+        priority: priority,
+        isActive: true,
+        createdAt: DateTime.now(),
+      );
+
+      await docRef.set(task.toMap());
+      return task;
+    } catch (e) {
+      print('Görev oluşturma hatası: $e');
+      return null;
+    }
+  }
+
+  // Apartmanın görevlerini getir
+  Future<List<Task>> getApartmentTasks(String apartmentId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('tasks')
+          .where('apartmentId', isEqualTo: apartmentId)
+          .where('isActive', isEqualTo: true)
+          .orderBy('priority')
+          .orderBy('createdAt', descending: false)
+          .get();
+
+      return querySnapshot.docs.map((doc) => Task.fromMap(doc.data())).toList();
+    } catch (e) {
+      print('Görevleri getirme hatası: $e');
+      return [];
     }
   }
 }
