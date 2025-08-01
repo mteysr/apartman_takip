@@ -24,6 +24,8 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   List<Task> _tasks = [];
   bool _isLoadingTasks = true;
+  Map<String, String> _userNames = {};
+  bool _isLoadingUsers = false;
 
   bool get _isCreator =>
       _authService.currentUser?.uid == widget.apartmentGroup.creatorId;
@@ -32,6 +34,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
   void initState() {
     super.initState();
     _loadTasks();
+    _loadUserNames();
   }
 
   Future<void> _loadTasks() async {
@@ -40,6 +43,20 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
     setState(() {
       _tasks = tasks;
       _isLoadingTasks = false;
+    });
+  }
+
+  Future<void> _loadUserNames() async {
+    setState(() {
+      _isLoadingUsers = true;
+    });
+
+    final names = await _firestoreService
+        .getUserDisplayNames(widget.apartmentGroup.memberIds);
+
+    setState(() {
+      _userNames = names;
+      _isLoadingUsers = false;
     });
   }
 
@@ -288,38 +305,50 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
         ),
         const SizedBox(height: 12),
         Card(
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: widget.apartmentGroup.memberIds.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final memberId = widget.apartmentGroup.memberIds[index];
-              final isCreator = memberId == widget.apartmentGroup.creatorId;
+          child: _isLoadingUsers
+              ? const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: widget.apartmentGroup.memberIds.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final memberId = widget.apartmentGroup.memberIds[index];
+                    final isCreator =
+                        memberId == widget.apartmentGroup.creatorId;
+                    final userName = _userNames[memberId] ?? 'Yükleniyor...';
 
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: isCreator ? Colors.amber : Colors.blue,
-                  child: Icon(
-                    isCreator ? Icons.star : Icons.person,
-                    color: Colors.white,
-                  ),
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: isCreator ? Colors.amber : Colors.blue,
+                        child: Text(
+                          userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        userName,
+                        style: TextStyle(
+                          fontWeight:
+                              isCreator ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      subtitle: Text(
+                        isCreator ? 'Grup Yöneticisi' : 'Üye',
+                      ),
+                      trailing: isCreator
+                          ? const Icon(Icons.star, color: Colors.amber)
+                          : null,
+                    );
+                  },
                 ),
-                title: Text(
-                  'Üye ${index + 1}',
-                  style: TextStyle(
-                    fontWeight: isCreator ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-                subtitle: Text(
-                  isCreator ? 'Grup Yöneticisi' : 'Üye',
-                ),
-                trailing: isCreator
-                    ? const Icon(Icons.star, color: Colors.amber)
-                    : null,
-              );
-            },
-          ),
         ),
       ],
     );
@@ -441,6 +470,32 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                   children: [
                     _buildPriorityChip(task.priority),
                     const SizedBox(width: 8),
+                    if (task.assignedUserId != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.person, size: 12, color: Colors.blue),
+                            const SizedBox(width: 4),
+                            Text(
+                              _userNames[task.assignedUserId] ?? 'Yükleniyor...',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
                     Text(
                       _formatDate(task.createdAt),
                       style: const TextStyle(

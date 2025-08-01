@@ -11,6 +11,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController(); // Yeni eklendi
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -19,6 +20,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   void dispose() {
+    _usernameController.dispose(); // Yeni eklendi
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -34,6 +36,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final result = await _authService.registerWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
+        _usernameController.text.trim(), // Kullanıcı adı eklendi
       );
 
       setState(() {
@@ -66,11 +69,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Kullanıcı adı alanı eklendi
+              TextFormField(
+                controller: _usernameController,
+                decoration: const InputDecoration(
+                  labelText: 'Kullanıcı Adı',
+                  hintText: 'Örn: Ahmet Yılmaz',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Kullanıcı adı gerekli';
+                  }
+                  if (value.trim().length < 2) {
+                    return 'Kullanıcı adı en az 2 karakter olmalı';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
                   labelText: 'E-posta',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -88,6 +112,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Şifre',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
                 ),
                 obscureText: true,
                 validator: (value) {
@@ -106,6 +131,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Şifre Tekrar',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock_outline),
                 ),
                 obscureText: true,
                 validator: (value) {

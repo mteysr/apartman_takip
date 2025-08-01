@@ -3,6 +3,8 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/apartment_group.dart';
 import 'apartment_detail_screen.dart';
+import 'create_apartment_screen.dart';
+import 'join_with_invite_screen.dart';
 
 class ApartmentSelectionScreen extends StatefulWidget {
   const ApartmentSelectionScreen({Key? key}) : super(key: key);
@@ -64,13 +66,19 @@ class _ApartmentSelectionScreenState extends State<ApartmentSelectionScreen> {
               ? _buildEmptyState()
               : _buildApartmentList(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Davet kodu ile katılma ekranına git
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Davet kodu ile katılma yakında eklenecek'),
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const JoinWithInviteScreen(),
             ),
           );
+          if (result != null) {
+            setState(() {
+              _isLoading = true;
+            });
+            _loadApartments();
+          }
         },
         child: const Icon(Icons.qr_code),
       ),
@@ -103,16 +111,38 @@ class _ApartmentSelectionScreenState extends State<ApartmentSelectionScreen> {
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Yeni grup oluşturma
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateApartmentScreen(),
+                  ),
+                );
+                if (result != null) {
+                  setState(() {
+                    _isLoading = true;
+                  });
+                  _loadApartments();
+                }
               },
               icon: const Icon(Icons.add),
               label: const Text('Yeni Grup Oluştur'),
             ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
-              onPressed: () {
-                // TODO: Davet kodu ile katılma
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const JoinWithInviteScreen(),
+                  ),
+                );
+                if (result != null) {
+                  setState(() {
+                    _isLoading = true;
+                  });
+                  _loadApartments();
+                }
               },
               icon: const Icon(Icons.qr_code),
               label: const Text('Davet Kodu ile Katıl'),

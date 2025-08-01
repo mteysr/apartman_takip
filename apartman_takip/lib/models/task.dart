@@ -6,6 +6,8 @@ class Task {
   final int priority; // 1-5 arası, 1 en yüksek
   final bool isActive;
   final DateTime createdAt;
+  final String? assignedUserId; // Yeni eklendi
+  final DateTime? assignedDate; // Yeni eklendi
 
   Task({
     required this.id,
@@ -15,6 +17,8 @@ class Task {
     this.priority = 3,
     this.isActive = true,
     required this.createdAt,
+    this.assignedUserId,
+    this.assignedDate,
   });
 
   Map<String, dynamic> toMap() {
@@ -26,6 +30,8 @@ class Task {
       'priority': priority,
       'isActive': isActive,
       'createdAt': createdAt.millisecondsSinceEpoch,
+      'assignedUserId': assignedUserId,
+      'assignedDate': assignedDate?.millisecondsSinceEpoch,
     };
   }
 
@@ -38,6 +44,10 @@ class Task {
       priority: map['priority'] ?? 3,
       isActive: map['isActive'] ?? true,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] ?? 0),
+      assignedUserId: map['assignedUserId'],
+      assignedDate: map['assignedDate'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(map['assignedDate'])
+          : null,
     );
   }
 }

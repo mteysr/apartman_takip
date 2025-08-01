@@ -4,6 +4,7 @@ import 'login_screen.dart';
 import 'apartment_selection_screen.dart';
 import 'create_apartment_screen.dart';
 import 'join_with_invite_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -16,6 +17,15 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Apartman Sıra Takip'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -49,7 +59,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Kullanıcı: ${authService.currentUser?.email ?? 'Bilinmiyor'}',
+                      'Kullanıcı: ${authService.getUserDisplayName()}',
                       style: const TextStyle(fontSize: 16),
                     ),
                   ],
