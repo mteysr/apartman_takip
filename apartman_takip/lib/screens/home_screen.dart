@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
+import 'apartment_selection_screen.dart';
+import 'create_apartment_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -11,7 +13,7 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Apartman Takip'),
+        title: const Text('Apartman Sıra Takip'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -25,29 +27,81 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    const Icon(Icons.home, size: 64, color: Colors.blue),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Hoş Geldiniz!',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Kullanıcı: ${authService.currentUser?.email ?? 'Bilinmiyor'}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             const Text(
-              'Hoş Geldiniz!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              'Apartman Yönetimi',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Kullanıcı: ${authService.currentUser?.email ?? 'Bilinmiyor'}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () async {
-                await authService.signOut();
-                Navigator.pushReplacement(
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const ApartmentSelectionScreen(),
+                  ),
                 );
               },
-              child: const Text('Çıkış Yap'),
+              icon: const Icon(Icons.apartment),
+              label: const Text('Apartman/Ev Gruplarım'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateApartmentScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Yeni Grup Oluştur'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                // TODO: Davet kodu ile katılma ekranına git
+              },
+              icon: const Icon(Icons.qr_code),
+              label: const Text('Davet Kodu ile Katıl'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+              ),
             ),
           ],
         ),
