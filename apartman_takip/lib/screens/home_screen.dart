@@ -3,6 +3,7 @@ import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'apartment_selection_screen.dart';
 import 'create_apartment_screen.dart';
+import 'join_with_invite_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -95,7 +96,12 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () {
-                // TODO: Davet kodu ile katılma ekranına git
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const JoinWithInviteScreen(),
+                  ),
+                );
               },
               icon: const Icon(Icons.qr_code),
               label: const Text('Davet Kodu ile Katıl'),

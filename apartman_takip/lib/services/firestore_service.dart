@@ -77,4 +77,48 @@ class FirestoreService {
       return null;
     }
   }
+
+  // Davet kodu ile gruba katıl
+  Future<ApartmentGroup?> joinGroupByInviteCode({
+    required String inviteCode,
+    required String userId,
+  }) async {
+    try {
+      // Davet kodu ile grubu bul
+      final querySnapshot = await _firestore
+          .collection('apartment_groups')
+          .where('inviteCode', isEqualTo: inviteCode.toUpperCase())
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        throw Exception('Geçersiz davet kodu');
+      }
+
+      final doc = querySnapshot.docs.first;
+      final apartmentData = doc.data();
+      final memberIds = List<String>.from(apartmentData['memberIds'] ?? []);
+
+      // Kullanıcı zaten üye mi kontrol et
+      if (memberIds.contains(userId)) {
+        throw Exception('Bu gruba zaten üyesiniz');
+      }
+
+      // Kullanıcıyı gruba ekle
+      memberIds.add(userId);
+
+      await doc.reference.update({
+        'memberIds': memberIds,
+      });
+
+      // Güncellenmiş grup bilgilerini döndür
+      return ApartmentGroup.fromMap({
+        ...apartmentData,
+        'memberIds': memberIds,
+      });
+    } catch (e) {
+      print('Gruba katılma hatası: $e');
+      return null;
+    }
+  }
 }
