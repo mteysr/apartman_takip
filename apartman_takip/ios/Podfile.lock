@@ -1124,6 +1124,8 @@ DEPENDENCIES:
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - Flutter (from `Flutter`)
+  - "gRPC-C++ (~> 1.62.0)"
+  - gRPC-Core (~> 1.62.0)
 
 SPEC REPOS:
   trunk:
@@ -1182,6 +1184,6 @@ SPEC CHECKSUMS:
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   RecaptchaInterop: 7d1a4a01a6b2cb1610a47ef3f85f0c411434cb21
 
-PODFILE CHECKSUM: 20e260c9bb3f61194c661a4ba028da86e4f3ed96
+PODFILE CHECKSUM: b59b853aa57f278391091e01f60d0f5704bd0bf8
 
 COCOAPODS: 1.16.2

@@ -29,15 +29,25 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks!
-
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
   target 'RunnerTests' do
     inherit! :search_paths
   end
 end
 
+# ✅ Burada ekliyoruz (target dışında ama post_install’dan önce)
+pod 'gRPC-C++', '~> 1.62.0'
+pod 'gRPC-Core', '~> 1.62.0'
+
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # ✅ LevelDB / Firestore / C++ fix
+    target.build_configurations.each do |config|
+      config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+      config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'
+    end
   end
 end
